@@ -29,3 +29,13 @@ Three.js is loaded from jsDelivr, so an internet connection is required.
 - Houses have doors that swing open and dark interiors with spooky props.
 
 This is a starter game and uses simple procedural shapes rather than downloaded models or textures.
+
+## Latest visual update
+
+- Corrected house-name sign orientation so labels read normally from the street.
+- Increased ambient and moon lighting and reduced fog density for better visibility.
+- Added brighter, more frequent street lanterns.
+- Added orange and purple porch string lights, extra jack-o'-lanterns, and floating ghost decorations to houses.
+- Refined zombies and scarecrows with layered clothing, facial details, glowing eyes, ragged edges, straw, and patches.
+
+The monsters are still procedural low-poly characters. For a much more realistic look, a later version could use animated rigged GLB models with detailed textures and walking animations.

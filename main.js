@@ -3,7 +3,7 @@ import * as THREE from "three";
 const mount = document.querySelector("#game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0916);
-scene.fog = new THREE.FogExp2(0x100d20, 0.027);
+scene.fog = new THREE.FogExp2(0x100d20, 0.021);
 
 const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 180);
 camera.position.set(0, 1.75, 8);
@@ -15,10 +15,10 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 mount.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0x9b9ad5, 0x201323, 1.7));
-const moonLight = new THREE.DirectionalLight(0xb6c5ff, 2.0);
+scene.add(new THREE.HemisphereLight(0xc2c8ff, 0x302238, 2.5));
+const moonLight = new THREE.DirectionalLight(0xd3d9ff, 2.7);
 moonLight.position.set(-8, 15, 6); moonLight.castShadow = true; scene.add(moonLight);
-const orangeGlow = new THREE.PointLight(0xff6a24, 2.4, 28); orangeGlow.position.set(0, 3, -3); scene.add(orangeGlow);
+const orangeGlow = new THREE.PointLight(0xff6a24, 3.2, 34); orangeGlow.position.set(0, 3, -3); scene.add(orangeGlow);
 
 const mats = {
   ground: new THREE.MeshStandardMaterial({ color: 0x24212b, roughness: 1 }),
@@ -53,13 +53,13 @@ function sphere(parent,x,y,z,sx,sy,sz,mat, seg=16) {
 function cone(parent,x,y,z,r,h,mat,rot=0) {
   const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,5),mat);m.position.set(x,y,z);m.rotation.y=rot;m.castShadow=true;parent.add(m);return m;
 }
-function addTextSign(text,x,z) {
+function addTextSign(text,x,z,faceStreet=false) {
   const canvas=document.createElement("canvas");canvas.width=512;canvas.height=128;
   const c=canvas.getContext("2d");c.fillStyle="#24182f";c.fillRect(0,0,512,128);c.strokeStyle="#c08b59";c.lineWidth=8;c.strokeRect(6,6,500,116);
   c.fillStyle="#ffcf87";c.font="bold 48px Georgia";c.textAlign="center";c.fillText(text,256,79);
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
   const sign=new THREE.Mesh(new THREE.PlaneGeometry(2.6,.65),new THREE.MeshStandardMaterial({map:tex,emissive:0x3a1d0a,emissiveIntensity:.6,side:THREE.DoubleSide}));
-  sign.position.set(x,2.5,z);scene.add(sign);return sign;
+  sign.position.set(x,2.5,z);if(faceStreet)sign.rotation.y=Math.PI;scene.add(sign);return sign;
 }
 
 // Town ground and crooked main street
@@ -120,13 +120,35 @@ function makeHouse(x,z,opts={}){
   const candle=new THREE.PointLight(0xff7b32,1.4,7);candle.position.set(0,1.8,0);inside.add(candle);
   inside.visible=false;
   houses.push({x,z,w,d,g,hinge,inside,door,opened:false,enterZ:z-d/2-1.3,exitZ:z-d/2-1.3});
-  addTextSign(opts.name||"NO VACANCY",x,z-d/2-.7);
+  addTextSign(opts.name||"NO VACANCY",x,z-d/2-.7,true);
   // porch jack-o-lanterns
   for(const side of [-1,1]){
     sphere(g,side*w*.42,.35,-d/2-.6,.28,.3,.28,mats.pumpkin,12);
     cone(g,side*w*.42,.67,-d/2-.6,.09,.18,mats.green);
-    const lamp=new THREE.PointLight(0xff741e,.7,4);lamp.position.set(x+side*w*.42,.6,z-d/2-.6);scene.add(lamp);
+    const lamp=new THREE.PointLight(0xff741e,1.0,5);lamp.position.set(x+side*w*.42,.6,z-d/2-.6);scene.add(lamp);
   }
+  // Halloween bunting: alternating purple and orange glowing bulbs over each facade.
+  const bulbMats=[new THREE.MeshStandardMaterial({color:0xff8b2c,emissive:0xff6414,emissiveIntensity:2.4}),new THREE.MeshStandardMaterial({color:0xb66bff,emissive:0x7d22ff,emissiveIntensity:2.6})];
+  for(let i=0;i<9;i++){
+    const bx=-w*.43+i*(w*.86/8), by=h+.05-Math.sin(i/8*Math.PI)*.38, bz=-d/2-.16;
+    sphere(g,bx,by,bz,.105,.105,.105,bulbMats[i%2],10);
+    if(i%2===0){const glow=new THREE.PointLight(0xff8a30,.32,2.5);glow.position.set(x+bx,by,z+bz);scene.add(glow);}
+    else {const glow=new THREE.PointLight(0xa85aff,.34,2.5);glow.position.set(x+bx,by,z+bz);scene.add(glow);}
+  }
+  // Extra doorstep pumpkins, with carved bright eyes.
+  for(const side of [-1,1]){
+    const px=side*w*.28,pz=-d/2-.95;
+    sphere(g,px,.36,pz,.34,.34,.31,mats.pumpkin,14);
+    cone(g,px,.72,pz,.09,.2,mats.green);
+    const eyeMat=new THREE.MeshBasicMaterial({color:0xffe8a3});
+    for(const ex of [-.11,.11]){const eye=cone(g,px+ex,.4,pz-.275,.065,.13,eyeMat,Math.PI);eye.rotation.x=Math.PI/2;}
+  }
+  // A tiny floating ghost ornament beside the porch.
+  const porchGhost=new THREE.Group();porchGhost.position.set(w*.55,1.2,-d/2-.75);g.add(porchGhost);
+  sphere(porchGhost,0,.22,0,.28,.34,.24,mats.ghost,14);
+  cone(porchGhost,-.17,-.02,0,.09,.25,mats.ghost,.1);cone(porchGhost,0,-.04,0,.09,.25,mats.ghost,.1);cone(porchGhost,.17,-.02,0,.09,.25,mats.ghost,.1);
+  const eyeMat=new THREE.MeshBasicMaterial({color:0x21132f});sphere(porchGhost,-.09,.25,-.205,.035,.055,.025,eyeMat,8);sphere(porchGhost,.09,.25,-.205,.035,.055,.025,eyeMat,8);
+  const ghostGlow=new THREE.PointLight(0xb08aff,.7,4);ghostGlow.position.set(x+w*.55,1.5,z-d/2-.75);scene.add(ghostGlow);
 }
 makeHouse(-13,-17,{name:"THE WIDOW'S",color:0x40384c});
 makeHouse(13,-15,{name:"BONE & BROOM",color:0x493337});
@@ -145,15 +167,15 @@ function makePumpkin(x,z,s=.55){
 for(let i=0;i<22;i++){const x=(Math.random()-.5)*40,z=(Math.random()-.5)*60;if(Math.abs(x)>4)makePumpkin(x,z,.25+Math.random()*.25);}
 
 // Decorative lanterns along the street
-for(let z=-30;z<34;z+=10){
+for(let z=-34;z<38;z+=7){
   for(const x of [-4.7,4.7]){
     box(scene,x,1.5,z,.12,3,.12,mats.black);
     box(scene,x,2.85,z,.5,.5,.5,mats.black);
     sphere(scene,x,2.85,z,.16,.16,.16,mats.gold,10);
-    const l=new THREE.PointLight(0xff9b3d,.9,7);l.position.set(x,2.8,z);scene.add(l);
+    const l=new THREE.PointLight(0xffb45b,1.45,10);l.position.set(x,2.8,z);scene.add(l);
   }
 }
-addTextSign("SLEEPY HOLLOW",0,-37);
+addTextSign("SLEEPY HOLLOW",0,-37,false);
 
 // Collectibles: a mix of real finds and cursed decoys.
 const collectibles=[];
@@ -178,22 +200,50 @@ makeItem("skull",-13,.7,-16,true);makeItem("book",13,.7,-14,true);makeItem("cand
 const monsters=[];
 function makeMonster(kind,x,z){
   const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
-  if(kind==="zombie"){
-    box(g,0,1.05,0,.72,1.15,.42,mats.green);
-    sphere(g,0,1.9,0,.42,.43,.38,mats.green,12);
-    box(g,-.13,1.95,-.33,.08,.07,.05,mats.red,{castShadow:false});box(g,.13,1.95,-.33,.08,.07,.05,mats.red,{castShadow:false});
+  const isZombie=kind==="zombie";
+  if(isZombie){
+    const tornCoat=new THREE.MeshStandardMaterial({color:0x334d39,roughness:1});
+    const skin=new THREE.MeshStandardMaterial({color:0x7b9862,roughness:1});
+    box(g,0,1.05,0,.72,1.15,.42,tornCoat);
+    // Uneven shoulders, dangling coat strips and mismatched sleeves.
+    box(g,-.2,1.5,0,.34,.25,.47,mats.black);box(g,.22,1.48,0,.29,.2,.45,tornCoat);
+    cone(g,-.22,.42,-.02,.16,.45,mats.black,.4);cone(g,.2,.38,-.02,.12,.35,mats.black,2.2);
+    sphere(g,-.04,1.93,-.02,.42,.43,.38,skin,16);
+    // Sunken sockets, glowing pupils, crooked mouth and one exposed tooth.
+    for(const ex of [-.14,.14]){sphere(g,ex,2.0,-.355,.095,.105,.035,mats.black,10);sphere(g,ex,2.0,-.39,.035,.04,.02,new THREE.MeshBasicMaterial({color:0x9cff76}),8);}
+    box(g,0,1.77,-.365,.23,.055,.035,mats.black,{castShadow:false});box(g,.07,1.75,-.39,.045,.07,.025,mats.white,{castShadow:false});
+    sphere(g,-.34,1.85,-.2,.09,.06,.07,mats.red,8);
     box(g,0,.4,0,.65,.65,.4,mats.black);
-    for(const s of [-1,1]){const arm=box(g,s*.55,1.22,0,.18,.75,.2,mats.green);arm.rotation.z=s*.35;}
+    for(const side of [-1,1]){
+      const upper=box(g,side*.53,1.25,0,.19,.52,.2,skin);upper.rotation.z=side*.48;
+      const lower=box(g,side*.68,.91,-.03,.16,.42,.17,skin);lower.rotation.z=side*.18;
+      sphere(g,side*.7,.68,-.03,.14,.13,.13,skin,10);
+    }
+    // Ragged dark patches on the clothes.
+    box(g,-.22,1.15,-.22,.18,.22,.025,mats.red,{castShadow:false});box(g,.19,.85,-.22,.22,.13,.025,mats.black,{castShadow:false});
   } else {
-    box(g,0,1.05,0,.62,1.15,.38,mats.straw);
-    sphere(g,0,1.95,0,.42,.42,.4,mats.straw,12);
+    const burlap=new THREE.MeshStandardMaterial({color:0x9a8041,roughness:1});
+    const patch=new THREE.MeshStandardMaterial({color:0x51402c,roughness:1});
+    box(g,0,1.05,0,.62,1.15,.38,burlap);
+    // Stitched burlap sack head with deep eyes and a crooked stitched grin.
+    sphere(g,0,1.95,0,.42,.42,.4,mats.straw,14);
+    for(const ex of [-.14,.14]){sphere(g,ex,1.99,-.355,.08,.11,.035,mats.black,10);sphere(g,ex,1.99,-.39,.025,.035,.02,new THREE.MeshBasicMaterial({color:0xffa14d}),8);}
+    for(let i=0;i<5;i++)box(g,-.16+i*.08,1.79,-.385,.025,.035,.02,patch,{castShadow:false});
     box(g,0,2.15,-.02,.9,.12,.14,mats.wood);
     cone(g,0,2.5,0,.48,.48,mats.black);
-    box(g,-.5,1.25,0,.75,.13,.13,mats.wood);box(g,.5,1.25,0,.75,.13,.13,mats.wood);
+    // Straw pokes out around the collar and sleeves.
+    for(let i=0;i<7;i++){const a=i/7*Math.PI*2;const strawBit=box(g,Math.cos(a)*.39,1.47,Math.sin(a)*.28,.22,.06,.06,mats.straw);strawBit.rotation.y=a;}
+    for(const side of [-1,1]){
+      const arm=box(g,side*.5,1.25,0,.75,.13,.13,mats.wood);arm.rotation.z=side*.08;
+      for(let j=0;j<3;j++)cone(g,side*(.72+j*.08),1.16-j*.04,0,.06,.18,mats.straw,side*.5);
+    }
     box(g,-.2,.4,0,.15,.75,.15,mats.wood);box(g,.2,.4,0,.15,.75,.15,mats.wood);
+    // Cloth patches and a dangling rope belt.
+    box(g,-.15,1.0,-.205,.2,.25,.025,patch,{castShadow:false});box(g,.18,.84,-.205,.19,.16,.025,mats.black,{castShadow:false});
+    const rope=box(g,0,.7,-.24,.64,.055,.055,mats.wood);rope.rotation.z=.12;
   }
-  const eyeGlow=new THREE.PointLight(kind==="zombie"?0x6cff83:0xffa14d,.7,3);eyeGlow.position.set(0,1.9,-.3);g.add(eyeGlow);
-  monsters.push({g,kind,speed:kind==="zombie"?.65:.48,phase:Math.random()*5});
+  const eyeGlow=new THREE.PointLight(isZombie?0x6cff83:0xffa14d,.9,4);eyeGlow.position.set(0,1.95,-.4);g.add(eyeGlow);
+  monsters.push({g,kind,speed:isZombie?.65:.48,phase:Math.random()*5});
 }
 makeMonster("zombie",-5,-20);makeMonster("scarecrow",5,-7);makeMonster("zombie",5,17);makeMonster("scarecrow",-4,29);
 
