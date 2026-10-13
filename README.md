@@ -39,3 +39,13 @@ This is a starter game and uses simple procedural shapes rather than downloaded 
 - Refined zombies and scarecrows with layered clothing, facial details, glowing eyes, ragged edges, straw, and patches.
 
 The monsters are still procedural low-poly characters. For a much more realistic look, a later version could use animated rigged GLB models with detailed textures and walking animations.
+
+## Performance update
+
+This version is tuned to run more smoothly on a wider range of devices:
+- Disables real-time shadow maps, which are expensive to render.
+- Caps rendering pixel density (more aggressively on mobile devices).
+- Removes most decorative point lights; emissive bulbs, windows, eyes, and items still look bright.
+- Limits rendering to about 30 FPS on mobile-sized devices and 60 FPS on desktop to avoid unnecessary work.
+
+If you still experience slowdowns, close other browser tabs and try the game in a current version of Chrome, Edge, or Firefox.

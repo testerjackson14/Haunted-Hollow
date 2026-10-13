@@ -7,17 +7,19 @@ scene.fog = new THREE.FogExp2(0x100d20, 0.021);
 
 const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 180);
 camera.position.set(0, 1.75, 8);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || innerWidth < 700;
+const renderer = new THREE.WebGLRenderer({ antialias: !isMobileDevice, powerPreference: "high-performance" });
+// Pixel count is a major cost on phones and high-DPI screens.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.15 : 1.5));
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Real-time shadows are expensive and the low-poly night scene reads well without them.
+renderer.shadowMap.enabled = false;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 mount.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xc2c8ff, 0x302238, 2.5));
 const moonLight = new THREE.DirectionalLight(0xd3d9ff, 2.7);
-moonLight.position.set(-8, 15, 6); moonLight.castShadow = true; scene.add(moonLight);
+moonLight.position.set(-8, 15, 6); moonLight.castShadow = false; scene.add(moonLight);
 const orangeGlow = new THREE.PointLight(0xff6a24, 3.2, 34); orangeGlow.position.set(0, 3, -3); scene.add(orangeGlow);
 
 const mats = {
@@ -125,15 +127,14 @@ function makeHouse(x,z,opts={}){
   for(const side of [-1,1]){
     sphere(g,side*w*.42,.35,-d/2-.6,.28,.3,.28,mats.pumpkin,12);
     cone(g,side*w*.42,.67,-d/2-.6,.09,.18,mats.green);
-    const lamp=new THREE.PointLight(0xff741e,1.0,5);lamp.position.set(x+side*w*.42,.6,z-d/2-.6);scene.add(lamp);
+    // Emissive pumpkin/window materials provide the glow without another real-time light.
   }
   // Halloween bunting: alternating purple and orange glowing bulbs over each facade.
   const bulbMats=[new THREE.MeshStandardMaterial({color:0xff8b2c,emissive:0xff6414,emissiveIntensity:2.4}),new THREE.MeshStandardMaterial({color:0xb66bff,emissive:0x7d22ff,emissiveIntensity:2.6})];
   for(let i=0;i<9;i++){
     const bx=-w*.43+i*(w*.86/8), by=h+.05-Math.sin(i/8*Math.PI)*.38, bz=-d/2-.16;
     sphere(g,bx,by,bz,.105,.105,.105,bulbMats[i%2],10);
-    if(i%2===0){const glow=new THREE.PointLight(0xff8a30,.32,2.5);glow.position.set(x+bx,by,z+bz);scene.add(glow);}
-    else {const glow=new THREE.PointLight(0xa85aff,.34,2.5);glow.position.set(x+bx,by,z+bz);scene.add(glow);}
+    // Bulbs use emissive materials; avoid one point light per bulb.
   }
   // Extra doorstep pumpkins, with carved bright eyes.
   for(const side of [-1,1]){
@@ -148,7 +149,7 @@ function makeHouse(x,z,opts={}){
   sphere(porchGhost,0,.22,0,.28,.34,.24,mats.ghost,14);
   cone(porchGhost,-.17,-.02,0,.09,.25,mats.ghost,.1);cone(porchGhost,0,-.04,0,.09,.25,mats.ghost,.1);cone(porchGhost,.17,-.02,0,.09,.25,mats.ghost,.1);
   const eyeMat=new THREE.MeshBasicMaterial({color:0x21132f});sphere(porchGhost,-.09,.25,-.205,.035,.055,.025,eyeMat,8);sphere(porchGhost,.09,.25,-.205,.035,.055,.025,eyeMat,8);
-  const ghostGlow=new THREE.PointLight(0xb08aff,.7,4);ghostGlow.position.set(x+w*.55,1.5,z-d/2-.75);scene.add(ghostGlow);
+  // Ghost ornament keeps its emissive material instead of adding another point light.
 }
 makeHouse(-13,-17,{name:"THE WIDOW'S",color:0x40384c});
 makeHouse(13,-15,{name:"BONE & BROOM",color:0x493337});
@@ -172,7 +173,7 @@ for(let z=-34;z<38;z+=7){
     box(scene,x,1.5,z,.12,3,.12,mats.black);
     box(scene,x,2.85,z,.5,.5,.5,mats.black);
     sphere(scene,x,2.85,z,.16,.16,.16,mats.gold,10);
-    const l=new THREE.PointLight(0xffb45b,1.45,10);l.position.set(x,2.8,z);scene.add(l);
+    if ((Math.round((z + 34) / 7) + (x > 0 ? 1 : 0)) % 2 === 0) { const l=new THREE.PointLight(0xffb45b,1.1,8);l.position.set(x,2.8,z);scene.add(l); }
   }
 }
 addTextSign("SLEEPY HOLLOW",0,-37,false);
@@ -188,7 +189,7 @@ function makeItem(type,x,y,z,decoy=false){
   else if(type==="potion"){mesh=sphere(group,0,0,0,.2,.27,.2,new THREE.MeshStandardMaterial({color:0x8e6bff,emissive:0x4422aa,emissiveIntensity:.9}),12);box(group,0,.28,0,.12,.12,.12,mats.gold);}
   else if(type==="bat"){mesh=sphere(group,0,0,0,.18,.12,.14,mats.black,12);cone(group,-.25,.02,0,.2,.35,mats.black,.8);cone(group,.25,.02,0,.2,.35,mats.black,2.4);}
   else {mesh=sphere(group,0,0,0,.25,.25,.25,mats.gold,12);}
-  const glow=new THREE.PointLight(decoy?0xb08aff:0xffb14e,decoy?1.1:.8,4);group.add(glow);glow.position.set(0,.25,0);
+  // Item materials are emissive; a point light per collectible is unnecessary.
   group.userData={type,decoy,mesh,phase:Math.random()*6};
   collectibles.push(group);
 }
@@ -242,7 +243,7 @@ function makeMonster(kind,x,z){
     box(g,-.15,1.0,-.205,.2,.25,.025,patch,{castShadow:false});box(g,.18,.84,-.205,.19,.16,.025,mats.black,{castShadow:false});
     const rope=box(g,0,.7,-.24,.64,.055,.055,mats.wood);rope.rotation.z=.12;
   }
-  const eyeGlow=new THREE.PointLight(isZombie?0x6cff83:0xffa14d,.9,4);eyeGlow.position.set(0,1.95,-.4);g.add(eyeGlow);
+  // Glowing eyes provide the effect without per-monster lighting cost.
   monsters.push({g,kind,speed:isZombie?.65:.48,phase:Math.random()*5});
 }
 makeMonster("zombie",-5,-20);makeMonster("scarecrow",5,-7);makeMonster("zombie",5,17);makeMonster("scarecrow",-4,29);
@@ -343,8 +344,13 @@ function updateMonsters(dt,t){
     if(d<1.4){sayToast(m.kind==="zombie"?"The zombie groans right behind you!":"The scarecrow creaks closer!",900);lastMoveTime=performance.now();}
   }
 }
+let lastRenderTime = 0;
+const targetFrameMs = isMobileDevice ? 1000 / 30 : 1000 / 60;
 function animate(now=0){
-  requestAnimationFrame(animate);const dt=Math.min(.04,clock.getDelta());const t=now/1000;
+  requestAnimationFrame(animate);
+  if (now - lastRenderTime < targetFrameMs - 1) return;
+  lastRenderTime = now;
+  const dt=Math.min(.04,clock.getDelta());const t=now/1000;
   for(const item of collectibles){if(item.visible){item.position.y=.72+Math.sin(t*2+item.userData.phase)*.12;item.rotation.y+=dt*.65;}}
   updatePlayer(dt);updateMonsters(dt,t);
   renderer.render(scene,camera);
