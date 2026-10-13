@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#100b22">
+  <title>The Haunted Hollow — Halloween Hunt</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.174.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+  <div class="vignette"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">✦</span>
+      <div><strong>THE HAUNTED HOLLOW</strong><small>A tiny Halloween scavenger hunt</small></div>
+    </div>
+    <button id="soundBtn" class="icon-button" aria-label="Toggle sound">♫ <span id="soundLabel">Sound off</span></button>
+  </header>
+
+  <section id="hud" class="hud hidden" aria-live="polite">
+    <div class="progress-card">
+      <div class="progress-top"><span>LOST CHARMS</span><strong id="score">0 / 5</strong></div>
+      <div class="progress-track"><div id="progressFill"></div></div>
+      <div id="statusText">The graveyard is waiting...</div>
+    </div>
+    <button id="clueBtn" class="clue-button">☾ Get a clue</button>
+  </section>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <section id="intro" class="overlay">
+    <div class="intro-card">
+      <div class="eyebrow">A MOONLIT MYSTERY</div>
+      <h1>Find the <em>five</em><br>lost charms.</h1>
+      <p>The old graveyard is full of tricks. Find five enchanted Halloween charms to wake the pumpkin gate before midnight.</p>
+      <div class="howto">
+        <span><b>WASD / arrows</b> move</span>
+        <span><b>Drag</b> to look around</span>
+        <span><b>Tap a charm</b> to collect</span>
+      </div>
+      <button id="startBtn" class="primary-button">Enter the Hollow <span>→</span></button>
+      <p class="small-note">Works on desktop and mobile. Compatible phones can try real-world AR.</p>
+    </div>
+  </section>
+
+  <section id="clueModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="clueTitle">
+    <div class="modal-card">
+      <button id="closeClue" class="close-button" aria-label="Close clue">×</button>
+      <div class="eyebrow">A WHISPER IN THE FOG</div>
+      <h2 id="clueTitle">A little hint</h2>
+      <p id="clueText">Look where the moonlight falls.</p>
+      <button id="clueOk" class="primary-button">I'll keep looking</button>
+    </div>
+  </section>
+
+  <section id="winModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="modal-card win-card">
+      <div class="win-spark">✦ 🎃 ✦</div>
+      <div class="eyebrow">THE SPELL IS BROKEN</div>
+      <h2 id="winTitle">You found them all!</h2>
+      <p>The pumpkin gate glows, the ghosts cheer, and the Hollow is yours until next Halloween.</p>
+      <button id="playAgainBtn" class="primary-button">Play again ↻</button>
+    </div>
+  </section>
+
+  <footer class="bottom-hint">
+    <span id="controlHint">WASD / arrows to move · drag to look · click a glowing charm</span>
+    <span class="made-for">MADE FOR SPOOKY EXPLORERS</span>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
